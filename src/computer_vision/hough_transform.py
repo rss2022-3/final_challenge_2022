@@ -59,7 +59,7 @@ def get_trajectory(img, filename = "trajectory.jpg"):
 
 def test_hough(filename):
     img = cv2.imread(input_filepath+filename)
-    return get_trajectory(img, filename)
+    return get_trajectory(img, "hough "+filename)
 
 for i in range(6):
     filename = "image ("+str(i+1)+").png"
