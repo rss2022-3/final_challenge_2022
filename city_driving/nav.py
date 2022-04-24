@@ -96,18 +96,24 @@ class CityNavigation:
 
         #################################
 
+        #TODO: LOGIC HERE MAY BE WRONG
+
+        # we found a stop sign
         if(self.Detector.stop_found and self.Detector.get_area() > stop_size_thresh and not self.stopped):
-            if self.now == 0:
-                self.now = rospy.get_time()
+            if self.prev_time == 0:
+                self.prev_time = rospy.get_time()
             drive_cmd = self.drive(steer, 0, None, None)
-            rospy.sleep(1)#timer should have a callback function
+            #rospy.sleep(1)#timer should have a callback function
             self.stopped = True
             self.Detector.stop_registered()
-            self.alfredo.drive.speed = 1
-            if self.now > 1:
-                self.now = 0
+            if rospy.get_time() - self.prev_time > 1:
                 self.stopped = True
                 drive_cmd = self.drive(steer, speed, None, None)
+        
+        # make sure we leave the stop sign before resetting
+        if not (self.Detector.stop_found and self.Detector.get_area() > stop_size_thresh):
+            self.stopped = False
+            self.prev_time = 0
         
         self.pub.publish(drive_cmd)
         
