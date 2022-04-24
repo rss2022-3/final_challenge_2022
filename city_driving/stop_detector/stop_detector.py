@@ -1,5 +1,9 @@
+from ctypes.wintypes import POINT
 import cv2
 import rospy
+from geometry_msgs.msg import Point 
+
+
 
 import numpy as np
 from sensor_msgs.msg import Image
@@ -7,7 +11,7 @@ from detector import StopSignDetector
 class SignDetector:
     def __init__(self):
         self.detector = StopSignDetector()
-        self.publisher = #TODO
+        self.publisher = rospy.Publisher("relative_stop_px", Point, queue_size =10)
         self.subscriber = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.callback)
         self.stop_found = False
         self.box = []

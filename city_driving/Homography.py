@@ -44,6 +44,8 @@ class HomographyTransformer:
         self.line_px_sub = rospy.Subscriber("/relative_line_px", Point, self.line_detection_callback)
         self.line_pub = rospy.Publisher("/relative_line", Point, queue_size=10)
 
+        self.stop_sub = rospy.Subscriber("/relative_stop_px", Point, self.stop_detect_callback)
+
         self.marker_pub = rospy.Publisher("/cone_marker",
             Marker, queue_size=1)
 
@@ -77,6 +79,15 @@ class HomographyTransformer:
 
         self.line_pub.publish(relative_xy_msg)
         self.draw_marker(x1, y1, "map")
+
+    def stop_detect_callback(self, msg):
+        homogeneous_point = np.array([[u], [v], [1]])
+        xy = np.dot(self.h, homogeneous_point)
+        scaling_factor = 1.0 / xy[2, 0]
+        homogeneous_xy = xy * scaling_factor
+        x = homogeneous_xy[0, 0]
+        y = homogeneous_xy[1, 0]
+        return x, y
 
 
     def transformUvToXy(self, u, v):
