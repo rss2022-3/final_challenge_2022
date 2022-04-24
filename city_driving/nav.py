@@ -35,6 +35,7 @@ class CityNavigation:
     def __init__(self):
         self.sub = rospy.Subscriber(self.SCAN_TOPIC, LaserScan, self.scan_callback)
         self.line_sub = rospy.Subscriber("/relative_line", Point, self.line_callback)
+        self.stop_pos =rospy.Subscriber("/relative_stop", Point, self.stop_callback)
         self.pub = rospy.Publisher(self.Drive_TOPIC, AckermannDriveStamped, queue_size = 10)
         self.timer = rospy.Timer(rospy.Duration(1), self.time_callback)
         self.img_sub = rospy.Subscriber()
@@ -46,8 +47,10 @@ class CityNavigation:
         self.relative_y = 0
         self.stopped = False
         self.pursuit = PurePursuit(0.325)
+        self.stop_dist = 0.6 #how far away it will stop from stop sign
+        self.current_sign_distance = float("inf")
         self.now = 0
-    
+    c
     def v_function(self, v_desired, traj):
         #adaptive velocity function
         Lfw, lfw = 0, 0
@@ -62,6 +65,9 @@ class CityNavigation:
 
     def scan_callback(self, data):
         pass
+
+    def stop_callback(self, msg):
+        self.current_sign_distance = np.sqrt(msg.x**2 + msg.y**2)
 
     def time_callback(self, timer):
         self.stopped = False
@@ -96,12 +102,9 @@ class CityNavigation:
 
         #################################
 
-        #TODO: LOGIC HERE MAY BE WRONG
-
-        # we found a stop sign
-        if(self.Detector.stop_found and self.Detector.get_area() > stop_size_thresh and not self.stopped):
-            if self.prev_time == 0:
-                self.prev_time = rospy.get_time()
+        if(self.Detector.stop_found and self.stop_dist > self.current_sign_distance and not self.stopped):
+            if self.now == 0:
+                self.now = rospy.get_time()
             drive_cmd = self.drive(steer, 0, None, None)
             #rospy.sleep(1)#timer should have a callback function
             self.stopped = True
@@ -111,7 +114,7 @@ class CityNavigation:
                 drive_cmd = self.drive(steer, speed, None, None)
         
         # make sure we leave the stop sign before resetting
-        if not (self.Detector.stop_found and self.Detector.get_area() > stop_size_thresh):
+        if not (self.Detector.stop_found and self.current_sign_distance > 0.6):
             self.stopped = False
             self.prev_time = 0
         

@@ -22,7 +22,10 @@ class SignDetector:
         bgr_img = np_img[:,:,:-1]
         rgb_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2RGB)
         self.stop_found, self.box = self.detector.predict(bgr_img)
-        #TODO: 
+        bottom = Point()
+        bottom.x = (self.box[0] + self.box[2])/2
+        bottom.y = self.box[1]
+        self.publisher.publish(bottom)
 
     def stop_registered(self):
         self.stop_found = False

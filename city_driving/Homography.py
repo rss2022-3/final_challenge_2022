@@ -1,3 +1,4 @@
+from asyncio import queues
 import rospy
 import numpy as np
 
@@ -45,6 +46,7 @@ class HomographyTransformer:
         self.line_pub = rospy.Publisher("/relative_line", Point, queue_size=10)
 
         self.stop_sub = rospy.Subscriber("/relative_stop_px", Point, self.stop_detect_callback)
+        self.stop_pub = rospy.Publisher("/relative_stop", Point, queue_size = 10)
 
         self.marker_pub = rospy.Publisher("/cone_marker",
             Marker, queue_size=1)
@@ -81,13 +83,18 @@ class HomographyTransformer:
         self.draw_marker(x1, y1, "map")
 
     def stop_detect_callback(self, msg):
-        homogeneous_point = np.array([[u], [v], [1]])
-        xy = np.dot(self.h, homogeneous_point)
-        scaling_factor = 1.0 / xy[2, 0]
-        homogeneous_xy = xy * scaling_factor
-        x = homogeneous_xy[0, 0]
-        y = homogeneous_xy[1, 0]
-        return x, y
+        u = msg.x
+        v = msg.y
+
+        #Call to main function
+        x1, y1 = self.transformUvToXy(u, v)
+
+        #Publish relative xy position of object in real world
+        relative_xy_msg = Point()
+        relative_xy_msg.x = x1
+        relative_xy_msg.y = y1
+
+        self.stop_pub.publish(relative_xy_msg)
 
 
     def transformUvToXy(self, u, v):
