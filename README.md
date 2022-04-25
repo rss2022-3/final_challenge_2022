@@ -1,9 +1,10 @@
 | Deliverable | Due Date              |
 |---------------|----------------------------------------------------------------------------|
-| Race Day | TBA |
-| Code Pushed to Github  | TBA |
-| Briefing (15 min presentation + 5 min Q&A) OR Report ([github pages](https://github.mit.edu/rss/website2021)) | TBA |
-| [Team Member Assessment](https://forms.gle/5npgrmk8mjdRGGcL7)  | TBA|
+| Race Day - Dry Run | Friday, April 29th 10AM-1PM EST |
+| Race Day | Friday, May 6th 10AM-1PM EST |
+| Code Pushed to Github  | Friday, May 6th 1PM EST |
+| Briefing (15 min presentation + 5 min Q&A) OR Report ([github pages](https://github.mit.edu/rss/website2021)) | Wednesday, May 4th at 1:00PM EST (presentation time TBA) |
+| [Team Member Assessment](https://forms.gle/5npgrmk8mjdRGGcL7)  | Wednesday, May 4th at 1:00PM EST |
 
 # Final Challenge 2022
 
