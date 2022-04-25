@@ -19,7 +19,7 @@ def draw_line(img, rho, theta, color, thickness = 1):
     cv2.line(img,(x1,y1),(x2,y2),color,thickness)
 
 def get_trajectory(img, filename = "trajectory.jpg"):
-    img = img[int(img.shape[0]/3):img.shape[0], :]
+    img = img[int(img.shape[0]/3):, :]
     height = img.shape[0]
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)  
 
@@ -54,18 +54,18 @@ def get_trajectory(img, filename = "trajectory.jpg"):
     cv2.line(img,(int(bottom),0),(int(top),height),(255,0,0),1)
     cv2.imwrite(output_filepath+filename, img)
 
-    return ((bottom, 0), (top, height))
+    return (np.array([bottom, 0]), np.array([top, height]))
 
 
 def test_hough(filename):
     img = cv2.imread(input_filepath+filename)
     return get_trajectory(img, "hough "+filename)
 
-for i in range(6):
-    filename = "image ("+str(i+1)+").png"
-    try:
-        test_hough(filename)
-        print(filename+" success")
-    except:
-        print(filename+" fail")
-    
+#for i in range(6):
+#    filename = "image ("+str(i+1)+").png"
+#    try:
+#        test_hough(filename)
+#        print(filename+" success")
+#    except:
+#        print(filename+" fail")
+#    

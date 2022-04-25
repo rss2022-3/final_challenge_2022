@@ -1,0 +1,3 @@
+[submodule "src/utilities"]
+	path = src/utilities
+	url = http://github.com/rss2022-3/utilities.git
