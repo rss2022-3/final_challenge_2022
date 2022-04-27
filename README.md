@@ -60,7 +60,7 @@ Where `staff_multiplier` is a calibrating constant based off of the staff soluti
 
 `penalties = 5 * num_collisions + 10 * traffic_infractions + 10 * manual_assist`
 
-And `num_collisions` is the number of times the car collides with anything in the city (ie. buildings, bricks, road signs), `traffic_infractions` is the number of times the car passes a stop sign without stopping for the correct duration or stops at a non-stop sign, and `manual_assist` is the number of maneuvers (counted individually for turning a corner, stopping at a stop sign, resetting a car, etc.) that required manual teleop intervention.
+And `num_collisions` is the number of times the car collides with anything in the city (ie. buildings, bricks, road signs), `traffic_infractions` is the number of times the car passes a stop sign without coming to a full stop or stops at a non-stop sign, and `manual_assist` is the number of maneuvers (counted individually for turning a corner, stopping at a stop sign, resetting a car, etc.) that required manual teleop intervention.
 
 As with Part A, it is possible to receive bonus points for a fast implementation, yet it is important to prioritize the accuracy of the maneuvers. The **maximum speed of your car should be 1 m/s**. However, operating at maximum speed for your entire run will be very challenging for this task. You should start slow and conduct tests to select an appropriate target speed for your car. To receive full credit over this ~15 meter course, you will need to cover an average of around .5 m/s (but this value will be calibrated by our staff solution completion speed).
 
@@ -293,6 +293,9 @@ At present, running the machine learning models for the final challenge will nee
 
 *How far should the car stop before the stop sign?*
 * The front of your car must stop between .75-1 meters in front of the stop sign to receive credit for the stop. On race day, there will be tape on the ground so we can check if your car has stopped at the correct distance. Stop signs will all be the same size as the ones at lab. They will always be perpendicular to the road and not visible from other sections of the city.
+
+*How long does the car need to stop for?*
+* There is no time requirement, but your car must come to a **full stop** (no California stops!).
 
 *Is it possible to avoid going through the car wash?*
 * Yes, there will be an alternate route that is slightly longer.
