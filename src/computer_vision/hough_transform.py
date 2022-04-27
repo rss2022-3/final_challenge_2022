@@ -19,6 +19,7 @@ def draw_line(img, rho, theta, color, thickness = 1):
     cv2.line(img,(x1,y1),(x2,y2),color,thickness)
 
 def get_trajectory(img, filename = "trajectory.jpg"):
+    original_height = img.shape[0]
     img = img[int(img.shape[0]/3):, :]
     height = img.shape[0]
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)  
@@ -28,7 +29,7 @@ def get_trajectory(img, filename = "trajectory.jpg"):
     edges = cv2.Canny(gray,lower_threshold,upper_threshold,apertureSize = 3) 
     #cv2.imwrite(output_filepath+"canny.jpg", edges) 
 
-    min_intersections = 120 #TUNE                         
+    min_intersections = 100 #TUNE                         
     lines = cv2.HoughLines(edges,1,np.pi/180,min_intersections)    
 
     min_left_theta, max_right_theta = np.Inf, 0
@@ -47,14 +48,18 @@ def get_trajectory(img, filename = "trajectory.jpg"):
     draw_line(img, right[0], right[1], (0,255,0))
     #cv2.imwrite(output_filepath+"hough.jpg", img)
 
-    bottom = (left[0]/np.cos(left[1]) + right[0]/np.cos(right[1]))/2
-    top = ((left[0]/np.sin(left[1])-height)*np.tan(left[1]) + 
-            (right[0]/np.sin(right[1])-height)*np.tan(right[1]))/2
+    top_right = right[0]/np.cos(right[1])
+    top_left = left[0]/np.cos(left[1])
+    bottom_right = (right[0]/np.sin(right[1])-height)*np.tan(right[1])
+    bottom_left = (left[0]/np.sin(left[1])-height)*np.tan(left[1])
 
-    cv2.line(img,(int(bottom),0),(int(top),height),(255,0,0),1)
+    top = (top_right + top_left)/2
+    bottom = (bottom_right + bottom_left)/2
+
+    cv2.line(img,(int(bottom),height),(int(top),0),(255,0,0),1)
     cv2.imwrite(output_filepath+filename, img)
 
-    return (np.array([bottom, 0]), np.array([top, height]))
+    return np.array([bottom,original_height]), np.array([top,original_height-height])
 
 
 def test_hough(filename):

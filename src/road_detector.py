@@ -42,17 +42,19 @@ class RoadDetector():
 
         image_msg = self.bridge.imgmsg_to_cv2(image_msg, desired_encoding='bgr8')
         
-        image_msg = np.asarray(image_msg)
+        # image_msg = np.asarray(image_msg)
+        image_msg = cv2.imread("computer_vision/test_images_input/image (4).png")
         bottom, top = get_trajectory(image_msg)
-        print(top, bottom, "lalala")
+        # print(top, bottom, "lalala")
         num_points = 25
         point_list = [] # (x,y) in relative frame of car
-        for step in range(num_points+1):
-            uv = bottom + (top-bottom)*(step / num_points)
+        for step in range(num_points-2):
+            uv = bottom + (top-bottom)*(step / float(num_points-1))
             xy = self.homography.transformUvToXy(uv[0], uv[1])
             point_list.append(xy)
+            
         
-        print(point_list[0], point_list[-1])
+        # print(point_list[0], point_list[-1])
 
         #bounding_box = line_color_segmentation(image_msg)
         #if not bounding_box is None:
@@ -67,9 +69,10 @@ class RoadDetector():
 
         #debug_msg = self.bridge.cv2_to_imgmsg(image, desired_encoding="bgr8")
         #self.debug_pub.publish(debug_msg)
-
+        print("POINT LIST: ", point_list)
         traj = PoseArray()
-        traj.header = self.make_header("/map")
+        traj.header = self.make_header("map")
+        
         for x,y in point_list:
             pose = Pose()
             pose.position.x = x
