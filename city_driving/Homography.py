@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from asyncio import queues
 import rospy
 import numpy as np
@@ -45,7 +46,7 @@ class HomographyTransformer:
         self.line_px_sub = rospy.Subscriber("/relative_line_px", Point, self.line_detection_callback)
         self.line_pub = rospy.Publisher("/relative_line", Point, queue_size=10)
 
-        self.stop_sub = rospy.Subscriber("/relative_stop_px", Point, self.stop_detect_callback)
+        self.stop_sub = rospy.Subscriber("/stop_sign_bbox", Point, self.stop_detect_callback)
         self.stop_pub = rospy.Publisher("/relative_stop", Point, queue_size = 10)
 
         self.marker_pub = rospy.Publisher("/cone_marker",

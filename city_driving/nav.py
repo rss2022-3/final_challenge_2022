@@ -1,47 +1,32 @@
+#!/usr/bin/env python
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 import rospy
 import numpy as np
 from sensor_msgs.msg import Image
 import os
-import torch
 import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw
 #TODO: import line follower
-from stop_detector.stop_detector import SignDetector
-from stop_detector.detector import StopSignDetector
 from rospy.numpy_msg import numpy_msg
-from rospy.time import sleep
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped
-from visualization_tools import *
-import tf2_ros
-import tf
 from geometry_msgs.msg import Point
 import tf2_geometry_msgs
-from utilities.line_color_segmentation import line_color_segmentation
-from visual_servoing.msg import ConeLocation, ParkingError
 from utilities.controllers import PurePursuit
 from utilities.Trajectory import LinearTrajectory
 
 
 class CityNavigation:
 
-    STOP_TOPIC = "/stop"
-    SCAN_TOPIC = "/scan"
-    DRIVE_TOPIC = "/drive"
-    stop_size_thresh = 40 #TODO: change this - picked this number randomly
-
     def __init__(self):
-        self.sub = rospy.Subscriber(self.SCAN_TOPIC, LaserScan, self.scan_callback)
+        self.sub = rospy.Subscriber("/scan", LaserScan, self.scan_callback)
         self.line_sub = rospy.Subscriber("/relative_line", Point, self.line_callback)
         self.stop_pos =rospy.Subscriber("/relative_stop", Point, self.stop_callback)
-        self.pub = rospy.Publisher(self.Drive_TOPIC, AckermannDriveStamped, queue_size = 10)
+        self.pub = rospy.Publisher("/drive", AckermannDriveStamped, queue_size = 10)
         self.timer = rospy.Timer(rospy.Duration(1), self.time_callback)
         self.img_sub = rospy.Subscriber()
-        self.Detector = SignDetector()
         self.alfredo = AckermannDriveStamped()
-        #self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
         self.parking_distance = .1 # meters; try playing with this number!
         self.relative_x = 0
         self.relative_y = 0
@@ -50,7 +35,7 @@ class CityNavigation:
         self.stop_dist = 0.6 #how far away it will stop from stop sign
         self.current_sign_distance = float("inf")
         self.now = 0
-    c
+
     def v_function(self, v_desired, traj):
         #adaptive velocity function
         Lfw, lfw = 0, 0
@@ -102,19 +87,18 @@ class CityNavigation:
 
         #################################
 
-        if(self.Detector.stop_found and self.stop_dist > self.current_sign_distance and not self.stopped):
+        if(self.stop_dist > self.current_sign_distance and not self.stopped):
             if self.now == 0:
                 self.now = rospy.get_time()
             drive_cmd = self.drive(steer, 0, None, None)
             #rospy.sleep(1)#timer should have a callback function
             self.stopped = True
-            self.Detector.stop_registered()
             if rospy.get_time() - self.prev_time > 1:
                 self.stopped = True
                 drive_cmd = self.drive(steer, speed, None, None)
         
         # make sure we leave the stop sign before resetting
-        if not (self.Detector.stop_found and self.current_sign_distance > 0.6):
+        if not (self.current_sign_distance > 0.6):
             self.stopped = False
             self.prev_time = 0
         
