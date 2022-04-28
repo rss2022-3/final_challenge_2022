@@ -182,20 +182,19 @@ Lucky for you, your car has been in this treacherous flower field before, and, i
 
 For this task, you will design and train your very own simple neural network to help identify the road. To do this, you will do the following high-level steps:
 
-- Drive around the Marigold Karpet track, recording your car's camera feed in a rosbag.
-- Extract a bunch of individual images from the rosbag.
-- Annotate each of the images, clicking a polygonal bounding box to segment out the road.
-  - This breaks up the image into patches or gridcells of a specified size. Any patch within the polygon you specify will be considered "road," all others are not.
-  - The annotations are saved as numpy arrays of size `[height of image // height of patch, width of image // width of patch]`, representing binary masks where `1`s denote road.
+- Drive around the Marigold Karpet track, recording your car's camera feed in a rosbag
+- Extract a bunch of individual images from the rosbag
+- Annotate each of the images, clicking a polygonal bounding box to segment out the road
+  - This marks pixels inside the polygon as "road" and outside as not
+  - The annotations are saved as numpy arrays of size `[height of image, width of image]`, representing binary masks where `1`s denote road
 - Upload your images and corresponding annotations to Google Drive
-- Fill in a neural network architecture in a given Colab notebook
-  - The neural network breaks the image into patches (as the annotation code does) and, for each patch, predicts whether it is road or not. This gives a low-resolution road
-  segmentation that can be used for path following.
+- Run the neural network code in the Colab notebook
+  - The neural network breaks the image into patches (as the annotation code does) and, for each patch, predicts whether it is road or not
 - Tune the hyperparameters of the neural network
 - Train and re-tune as needed
 - Download the saved weights of the neural network onto your car
-- Run the inference-time code to load up the weights, subscribe to your camera, and output a binary mask of where the road is.
-- Use this for line-following.
+- Run the inference-time code to load up the weights, subscribe to your camera, and output a binary mask of where the road is
+- Use this for line-following
 
 ### Specific Task Instructions
 Assuming you are in the `road_detector` directory:
@@ -212,20 +211,25 @@ Assuming you are in the `road_detector` directory:
 
 You've now extracted the images. On to annotations:
 
-* Modify `__utils__.py` to have the desired patch size (`H`, `W`).
 * Run `python3 annotate_imgs.py --path [path to images to annotate = ./images] --results [path to folder where annotations are saved = ./results]`
-    * Click on `n = 10` points bounding the road to create a polygon around it, thus marking all patches in those as ones on the road. Then, close the window to move on to the next image. You may need to close out a tiny menu window between images too.
+    * Click on `n = 10` points bounding the road to create a polygon around it, marking all pixels in the polygon as ones on the road. Then, close the window to move on to the next image. You may need to close out a tiny menu window between images too.
     * This can be run in Docker, but requires a bit of setup. First, `sudo apt install python3-pip python3-tk`. Then, `pip3 install matplotlib pillow Shapely`, and any other library that isn't already installed / throws an error.
 
-Now, time to build your neural net and train:
+Now, time to train:
 
-* Upload a copy of `final-challenge-ml-folder` to Google Drive.
-* Upload the contents of `images`, `testimages`, `results` to the corresponding Google Drive folders within `final-challenge-ml-folder`.
-* Fill out the TODOs in `TrainNotebook.ipynb`
-* Run all the cells to train. This saves the checkpoints to `checkpoints` folder in your Drive.
+* Make a personal copy of this folder in your Drive: https://drive.google.com/drive/folders/1VvM8y3EJmz2w6M_RxiWhQ05bks_Wybt8?usp=sharing. 
+    * Do _NOT_ work directly in this folder! MAKE A COPY OF IT FOR YOUR TEAM!
+* Upload the _local_ contents of `images`, `testimages`, `results` to the corresponding Google Drive folders within your team's `final-challenge-ml-folder`.
+* Run all the cells in `TrainNotebook.ipynb` to train. This saves the checkpoints to `checkpoints` folder in your Drive.
+    * You will need to change some of the paths for the code to work in your Google Drive directory structure -- see the TODOs in the notebook.
+    * You can tune the neural network as you like, though this is optional
+* If your team would like to, you can make a subdirectory inside the _shared_ `final-challenge-ml-folder/images` and `final-challenge-ml-folder/results` to upload some of your annotated training data to (images and `.npy` file masks)
+    * Please be sure to create the subdirectory and name it after your team. Do NOT upload images and annotations directly to `images` and `results`, since they might have the same name as files uploaded by some other team. We have created a subdirectory already called Team 0 as an example.
 
 Finally, on to deployment of the neural net: 
+
 * Download whatever weights you saved in `checkpoints` that you would like on the real car.
+   * The notebook loads whichever weights had the lowest validation loss, see the line that says `checkpoint_names[lowest_val]` for more details. `checkpoint_names[lowest_val]` contains the names of that weight file with the lowest validation loss
 * Modify `path_to_model_weights` in `__utils__.py` to point to that weights file.
 * Copy-paste your model architecture from the Colab notebook into `model.py`.
 * Copy the `road_detector` file over to a Razer computer (omitting the rosbag and any training/test data/other images, but including all code and the network weights).
