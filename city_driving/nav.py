@@ -1,47 +1,32 @@
+#!/usr/bin/env python
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 import rospy
 import numpy as np
 from sensor_msgs.msg import Image
 import os
-import torch
 import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw
 #TODO: import line follower
-from stop_detector.stop_detector import SignDetector
-from stop_detector.detector import StopSignDetector
 from rospy.numpy_msg import numpy_msg
-from rospy.time import sleep
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped
-from visualization_tools import *
-import tf2_ros
-import tf
 from geometry_msgs.msg import Point
 import tf2_geometry_msgs
-from utilities.line_color_segmentation import line_color_segmentation
-from visual_servoing.msg import ConeLocation, ParkingError
 from utilities.controllers import PurePursuit
 from utilities.Trajectory import LinearTrajectory
 
 
 class CityNavigation:
 
-    STOP_TOPIC = "/stop"
-    SCAN_TOPIC = "/scan"
-    DRIVE_TOPIC = "/drive"
-    stop_size_thresh = 40 #TODO: change this - picked this number randomly
-
     def __init__(self):
-        self.sub = rospy.Subscriber(self.SCAN_TOPIC, LaserScan, self.scan_callback)
+        self.sub = rospy.Subscriber("/scan", LaserScan, self.scan_callback)
         self.line_sub = rospy.Subscriber("/relative_line", Point, self.line_callback)
         self.stop_pos =rospy.Subscriber("/relative_stop", Point, self.stop_callback)
-        self.pub = rospy.Publisher(self.Drive_TOPIC, AckermannDriveStamped, queue_size = 10)
+        self.pub = rospy.Publisher("/vesc/ackermann_cmd_mux/input/navigation", AckermannDriveStamped, queue_size = 10)
         self.timer = rospy.Timer(rospy.Duration(1), self.time_callback)
-        self.img_sub = rospy.Subscriber()
-        self.Detector = SignDetector()
+        #self.img_sub = rospy.Subscriber()
         self.alfredo = AckermannDriveStamped()
-        #self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
         self.parking_distance = .1 # meters; try playing with this number!
         self.relative_x = 0
         self.relative_y = 0
@@ -50,7 +35,7 @@ class CityNavigation:
         self.stop_dist = 0.6 #how far away it will stop from stop sign
         self.current_sign_distance = float("inf")
         self.now = 0
-    c
+
     def v_function(self, v_desired, traj):
         #adaptive velocity function
         Lfw, lfw = 0, 0
@@ -73,51 +58,55 @@ class CityNavigation:
         self.stopped = False
 
     def line_callback(self, msg):
-        self.relative_x = msg.x_pos
-        self.relative_y = msg.y_pos
+        print("oline cllnac[ vals", msg.x, msg.y)
+        self.relative_x = msg.x
+        self.relative_y = msg.y
 
         dist = np.sqrt(self.relative_x**2 + self.relative_y**2) - self.parking_distance
         heading = np.arctan2(self.relative_y, self.relative_x)
 
         x_d = np.cos(heading)*dist
         y_d = np.sin(heading)*dist
-        #################################
-
-        #generate trajectory 
-        traj_knots = np.array([[0,0],
-                            [x_d, y_d]])
-
-        if abs(dist) >= 1:
-            t_breaks = np.array([0,dist])
-        #elif abs(dist) > 0.1:
-        #    t_breaks = np.array([0,0.5])
-        else:
-            t_breaks = np.array([0,1])
-
-
-        trj_d = LinearTrajectory(t_breaks, traj_knots)
-        
-        steer, speed = self.pursuit.adaptiveControl(trj_d, self.v_function)
-        drive_cmd = self.drive(steer, speed, None, None)
+        #print("x_d+y_d:", x_d, y_d)
 
         #################################
+        if True:
+            #generate trajectory 
+            traj_knots = np.array([[0,0],
+                                [x_d, y_d]])
 
-        if(self.Detector.stop_found and self.stop_dist > self.current_sign_distance and not self.stopped):
+            if abs(dist) >= 1:
+                t_breaks = np.array([0,dist])
+            #elif abs(dist) > 0.1:
+            #    t_breaks = np.array([0,0.5])
+            else:
+                t_breaks = np.array([0,1])
+
+            trj_d = LinearTrajectory(t_breaks, traj_knots)
+            print(trj_d)
+
+            steer= self.pursuit.control(trj_d,.3)
+            speed = 1
+            drive_cmd = self.drive(steer, speed, None, None)
+
+        #################################
+
+        if(self.stop_dist > self.current_sign_distance and not self.stopped):
+            print("stopping???")
             if self.now == 0:
                 self.now = rospy.get_time()
             drive_cmd = self.drive(steer, 0, None, None)
             #rospy.sleep(1)#timer should have a callback function
             self.stopped = True
-            self.Detector.stop_registered()
             if rospy.get_time() - self.prev_time > 1:
                 self.stopped = True
                 drive_cmd = self.drive(steer, speed, None, None)
         
         # make sure we leave the stop sign before resetting
-        if not (self.Detector.stop_found and self.current_sign_distance > 0.6):
+        if not (self.current_sign_distance > 0.6):
             self.stopped = False
             self.prev_time = 0
-        
+        print("made it here")
         self.pub.publish(drive_cmd)
         
 
@@ -130,10 +119,10 @@ class CityNavigation:
             :type theta_dot: float
             :param speed: speed in [m/s]
             :type speed: float
-
             :param speed: speed in [m/s]
             :type speed: float
         """
+        print("car speed is ", speed)
         ack_msg = AckermannDriveStamped()
         ack_msg.header.stamp = rospy.get_rostime()
         ack_msg.header.frame_id = 'base_link'
@@ -154,7 +143,6 @@ if __name__ == '__main__':
         rospy.spin()
     except rospy.ROSInterruptException:
         pass
-
         
         
         

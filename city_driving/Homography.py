@@ -1,4 +1,5 @@
-from asyncio import queues
+#!/usr/bin/env python
+#from asyncio import queues
 import rospy
 import numpy as np
 
@@ -11,6 +12,7 @@ from sensor_msgs.msg import Image
 from ackermann_msgs.msg import AckermannDriveStamped
 from visualization_msgs.msg import Marker
 from visual_servoing.msg import ConeLocation, ConeLocationPixel
+from std_msgs.msg import Float32MultiArray
 
 #The following collection of pixel locations and corresponding relative
 #ground plane locations are used to compute our homography matrix
@@ -45,7 +47,7 @@ class HomographyTransformer:
         self.line_px_sub = rospy.Subscriber("/relative_line_px", Point, self.line_detection_callback)
         self.line_pub = rospy.Publisher("/relative_line", Point, queue_size=10)
 
-        self.stop_sub = rospy.Subscriber("/relative_stop_px", Point, self.stop_detect_callback)
+        self.stop_sub = rospy.Subscriber("stop_sign_bbox", Float32MultiArray, self.stop_detect_callback)
         self.stop_pub = rospy.Publisher("/relative_stop", Point, queue_size = 10)
 
         self.marker_pub = rospy.Publisher("/cone_marker",
@@ -71,8 +73,7 @@ class HomographyTransformer:
         u = msg.x
         v = msg.y
 
-        #Call to main function
-        x1, y1 = self.transformUvToXy(u, v)
+        x1,y1= self.transformUvToXy(u, v)
 
         #Publish relative xy position of object in real world
         relative_xy_msg = Point()
@@ -82,10 +83,21 @@ class HomographyTransformer:
         self.line_pub.publish(relative_xy_msg)
         self.draw_marker(x1, y1, "map")
 
-    def stop_detect_callback(self, msg):
-        u = msg.x
-        v = msg.y
+    def stop_detect_callback(self, data):
+        
+	print(data.data)
+        if len(data.data) < 4:
+            #no stop sign found
+            return None
+        
+        xmin = data.data[0]
+        ymin = data.data[1]
+        xmax = data.data[2]
+        ymax = data.data[3]
 
+        u = ((xmin + xmax)/2)
+        v = ((ymin + ymax)/2)
+        
         #Call to main function
         x1, y1 = self.transformUvToXy(u, v)
 
@@ -102,12 +114,10 @@ class HomographyTransformer:
         u and v are pixel coordinates.
         The top left pixel is the origin, u axis increases to right, and v axis
         increases down.
-
         Returns a normal non-np 1x2 matrix of xy displacement vector from the
         camera to the point on the ground plane.
         Camera points along positive x axis and y axis increases to the left of
         the camera.
-
         Units are in meters.
         """
         homogeneous_point = np.array([[u], [v], [1]])
