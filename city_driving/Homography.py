@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from asyncio import queues
+#from asyncio import queues
 import rospy
 import numpy as np
 
@@ -12,6 +12,7 @@ from sensor_msgs.msg import Image
 from ackermann_msgs.msg import AckermannDriveStamped
 from visualization_msgs.msg import Marker
 from visual_servoing.msg import ConeLocation, ConeLocationPixel
+from std_msgs.msg import Float32MultiArray
 
 #The following collection of pixel locations and corresponding relative
 #ground plane locations are used to compute our homography matrix
@@ -46,7 +47,7 @@ class HomographyTransformer:
         self.line_px_sub = rospy.Subscriber("/relative_line_px", Point, self.line_detection_callback)
         self.line_pub = rospy.Publisher("/relative_line", Point, queue_size=10)
 
-        self.stop_sub = rospy.Subscriber("/stop_sign_bbox", Point, self.stop_detect_callback)
+        self.stop_sub = rospy.Subscriber("stop_sign_bbox", Float32MultiArray, self.stop_detect_callback)
         self.stop_pub = rospy.Publisher("/relative_stop", Point, queue_size = 10)
 
         self.marker_pub = rospy.Publisher("/cone_marker",
@@ -83,12 +84,20 @@ class HomographyTransformer:
         self.line_pub.publish(relative_xy_msg)
         self.draw_marker(x1, y1, "map")
 
-    def stop_detect_callback(self, msg):
-        u = msg.x
-        v = msg.y
+    def stop_detect_callback(self, data):
+        if len(data)<4:
+          #no stop sign found
+          return None
+        xmin = data.data[0]
+        ymin = data.data[1]
+        xmax = data.data[2]
+        ymax = data.data[3]
+        
+        x = ((xmin + xmax)/2)
+        y = ((ymin + ymax)/2)
 
         #Call to main function
-        x1, y1 = self.transformUvToXy(u, v)
+        x, y = self.transformUvToXy(u, v)
 
         #Publish relative xy position of object in real world
         relative_xy_msg = Point()
