@@ -14,6 +14,7 @@ from std_msgs.msg import Header
 #from computer_vision.line_color_segmentation import line_color_segmentation
 from homography_transformer import HomographyTransformer
 from computer_vision.hough_transform import get_trajectory
+from utilities.average import RunningAvg
 
 
 class RoadDetector():
@@ -26,6 +27,7 @@ class RoadDetector():
         # toggle line follower vs cone parker
         self.LineFollower = False
         self.homography = HomographyTransformer()
+        self.runningavg = RunningAvg()
 
         # Subscribe to ZED camera RGB frames
         self.traj_pub = rospy.Publisher("/trajectory", PoseArray, queue_size=10)
@@ -42,18 +44,27 @@ class RoadDetector():
 
         image_msg = self.bridge.imgmsg_to_cv2(image_msg, desired_encoding='bgr8')
         
-        # image_msg = np.asarray(image_msg)
-        image_msg = cv2.imread("computer_vision/test_images_input/image (4).png")
-        bottom, top = get_trajectory(image_msg)
+        image_msg = np.asarray(image_msg)
+        # image_msg = cv2.imread("computer_vision/test_images_input/image (4).png")
+
+        stack = get_trajectory(image_msg)
+        self.runningavg.add(stack)
+        new_stack = self.runningavg.get()
+        if new_stack is not None:
+            stack = new_stack
+        
+        bottom = stack[0, :]
+        top = stack[1, :]
+
         # print(top, bottom, "lalala")
         num_points = 25
         point_list = [] # (x,y) in relative frame of car
-        for step in range(num_points-2):
+        for step in range(num_points):
             uv = bottom + (top-bottom)*(step / float(num_points-1))
             xy = self.homography.transformUvToXy(uv[0], uv[1])
-            point_list.append(xy)
-            
-        
+            if xy[0] > 0:
+                point_list.append(xy)
+                
         # print(point_list[0], point_list[-1])
 
         #bounding_box = line_color_segmentation(image_msg)

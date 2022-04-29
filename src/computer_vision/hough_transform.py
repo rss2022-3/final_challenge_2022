@@ -42,10 +42,10 @@ def get_trajectory(img, filename = "trajectory.jpg"):
             elif rho < 0 and theta > max_right_theta:
                 max_right_theta = theta
                 right = (rho,theta)
-            draw_line(img, rho, theta, (0,0,255))
+            #draw_line(img, rho, theta, (0,0,255))
 
-    draw_line(img, left[0], left[1], (0,255,0))
-    draw_line(img, right[0], right[1], (0,255,0))
+    #draw_line(img, left[0], left[1], (0,255,0))
+    #draw_line(img, right[0], right[1], (0,255,0))
     #cv2.imwrite(output_filepath+"hough.jpg", img)
 
     top_right = right[0]/np.cos(right[1])
@@ -56,10 +56,10 @@ def get_trajectory(img, filename = "trajectory.jpg"):
     top = (top_right + top_left)/2
     bottom = (bottom_right + bottom_left)/2
 
-    cv2.line(img,(int(bottom),height),(int(top),0),(255,0,0),1)
-    cv2.imwrite(output_filepath+filename, img)
+    #cv2.line(img,(int(bottom),height),(int(top),0),(255,0,0),1)
+    #cv2.imwrite(output_filepath+filename, img)
 
-    return np.array([bottom,original_height]), np.array([top,original_height-height])
+    return np.stack([np.array([bottom,original_height]), np.array([top,original_height-height])])
 
 
 def test_hough(filename):
