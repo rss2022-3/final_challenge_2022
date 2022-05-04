@@ -35,6 +35,21 @@ class RoadDetector():
         self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
         self.bridge = CvBridge() # Converts between ROS images and OpenCV Images
 
+    def draw_line(self, img, rho, theta, color, thickness = 1):
+        height = img.shape[0]
+        bottom = rho/np.cos(theta)
+        top = (rho/np.sin(theta)-height)*np.tan(theta)
+        a = np.cos(theta)
+        b = np.sin(theta)
+        x0 = a*rho
+        y0 = b*rho
+        x1 = int(x0 + 1000*(-b))
+        y1 = int(y0 + 1000*(a))
+        x2 = int(x0 - 1000*(-b))
+        y2 = int(y0 - 1000*(a))
+        cv2.line(img,(x1,y1),(x2,y2),color,thickness)
+
+
     def image_callback(self, image_msg):
         # Apply your imported color segmentation function (cd_color_segmentation) to the image msg here
         # From your bounding box, take the center pixel on the bottom
@@ -44,10 +59,53 @@ class RoadDetector():
 
         image_msg = self.bridge.imgmsg_to_cv2(image_msg, desired_encoding='bgr8')
         
-        image_msg = np.asarray(image_msg)
+        img = np.asarray(image_msg)
         # image_msg = cv2.imread("computer_vision/test_images_input/image (4).png")
 
-        stack = get_trajectory(image_msg)
+        #stack = get_trajectory(image_msg)
+
+        original_height = img.shape[0]
+        img = img[int(img.shape[0]/3):, :]
+        height = img.shape[0]
+        gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)  
+
+        lower_threshold = 350 #TUNE
+        upper_threshold = 500 #TUNE
+        edges = cv2.Canny(gray,lower_threshold,upper_threshold,apertureSize = 3) 
+
+        min_intersections = 100 #TUNE                         
+        lines = cv2.HoughLines(edges,1,np.pi/180,min_intersections)    
+
+        min_left_theta, max_right_theta = np.Inf, 0
+        left, right = None, None
+        for i in range(lines.shape[0]):                         
+            for rho,theta in lines[i]:
+                if rho > 0 and theta < min_left_theta:
+                    min_left_theta = theta
+                    left = (rho,theta)
+                elif rho < 0 and theta > max_right_theta:
+                    max_right_theta = theta
+                    right = (rho,theta)
+                self.draw_line(img, rho, theta, (0,0,255))
+
+        self.draw_line(img, left[0], left[1], (0,255,0))
+        self.draw_line(img, right[0], right[1], (0,255,0))
+
+        top_right = right[0]/np.cos(right[1])
+        top_left = left[0]/np.cos(left[1])
+        bottom_right = (right[0]/np.sin(right[1])-height)*np.tan(right[1])
+        bottom_left = (left[0]/np.sin(left[1])-height)*np.tan(left[1])
+
+        top = (top_right + top_left)/2
+        bottom = (bottom_right + bottom_left)/2
+
+        cv2.line(img,(int(bottom),height),(int(top),0),(255,0,0),1)
+
+        self.debug_pub.publish(self.bridge.cv2_to_imgmsg(img, encoding='bgr8'))
+
+        stack = np.stack([np.array([bottom,original_height]), np.array([top,original_height-height])])
+
+
         self.runningavg.add(stack)
         new_stack = self.runningavg.get()
         if new_stack is not None:
@@ -80,7 +138,6 @@ class RoadDetector():
 
         #debug_msg = self.bridge.cv2_to_imgmsg(image, desired_encoding="bgr8")
         #self.debug_pub.publish(debug_msg)
-        print("POINT LIST: ", point_list)
         traj = PoseArray()
         traj.header = self.make_header("map")
         

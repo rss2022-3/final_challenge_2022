@@ -42,8 +42,8 @@ class RaceController():
         traj = LinearTrajectory(t_breaks, knots)
 
         #steer, speed = self.pursuit.adaptiveControl(traj, self.v_function)
-        steer = self.pursuit.control(traj, Lfw = 2)
-        speed = 0 #self.MAX_SPEED
+        steer = self.pursuit.control(traj, Lfw = 3)
+        speed = 2 #self.MAX_SPEED
         print("steer: ", steer)
 
         # TODO the speed computed is in the relative reference frame, thus it has the wrong signs
