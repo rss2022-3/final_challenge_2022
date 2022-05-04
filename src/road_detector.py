@@ -148,6 +148,7 @@ class RoadDetector():
             traj.poses.append(pose)
         # publish trajectory
         self.traj_pub.publish(traj)
+
     def make_header(self, frame_id, stamp=None):
         if stamp == None:
             stamp = rospy.Time.now()
@@ -155,6 +156,42 @@ class RoadDetector():
         header.stamp = stamp
         header.frame_id = frame_id
         return header
+
+
+    def get_closest_line(self, img, traj, thresh):
+        """Mitigates multiple trajectory error and reduces oscillation
+           down the track by eliminating trajectories who's distance
+           from the center is too large (i.e. trajectories computed from lines
+           in other lanes). 
+
+           Inputs: OpenCV image object, trajectory object after homography,
+                   threshold value for maximum distance from desired trajectory.
+           
+           Outputs: The current trajectory if the mean distance of the portion 
+                    of the trajectory to the middle line is less than or equal
+                    to the threshold. Otherwise, returns previous trajectory.
+
+        """
+        
+        ###TODO Take homography of middle lane in order to measure distance
+        #to trajectory values.
+        ###TODO Determine tresh value experimentally.
+        ###TODO declare self.prev_traj variable in __init__ function. 
+
+        width, _ = img.shape
+        middle = width/2 
+
+        mini_traj = np.array(traj) #Fix this
+        middle_line = np.array(middle) #Fix this 
+
+        mean_diff = np.abs(mini_traj - middle_line)/mini_traj.shape[0]
+
+        if mean_diff > thresh:
+            return self.prev_traj
+        else:
+            return traj
+
+
 
 if __name__ == '__main__':
     try:
